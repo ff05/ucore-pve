@@ -1,0 +1,19 @@
+name: Clean old uCore pve images
+on:
+  schedule:
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old images
+        uses: snok/container-retention-policy@v3
+        with:
+          account: ${{ github.repository_owner }}
+          token: ${{ secrets.PAT_CLEANUP }}
+          image-names: "ucore-pve, ucore-pve-minimal"
+          image-tags: "*"
+          tag-selection: both
+          keep-n-most-recent: 4

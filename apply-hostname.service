@@ -1,0 +1,14 @@
+[Unit]
+Description=Apply Proxmox Cloud-Init hostname every boot
+ConditionKernelCommandLine=ignition.platform.id=proxmoxve
+After=systemd-udev-settle.service
+Before=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/afterburn --cmdline --hostname=/etc/hostname
+ExecStartPost=-/usr/bin/hostnamectl hostname "$(cat /etc/hostname)"'
+
+[Install]
+WantedBy=multi-user.target

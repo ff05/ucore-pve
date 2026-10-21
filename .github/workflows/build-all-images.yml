@@ -1,0 +1,52 @@
+name: Build uCore pve variants
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 4 * * 1'
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    strategy:
+      matrix:
+        include:
+          - base: "ghcr.io/ublue-os/ucore:stable"
+            image_suffix: "ucore-pve"
+          - base: "ghcr.io/ublue-os/ucore-minimal:stable"
+            image_suffix: "ucore-pve-minimal"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate Date Tag
+        id: date
+        run: echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push OS images
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Containerfile
+          push: true
+          build-args: |
+            BASE_IMAGE=${{ matrix.base }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image_suffix }}:latest
+            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image_suffix }}:${{ steps.date.outputs.date }}
